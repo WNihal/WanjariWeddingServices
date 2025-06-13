@@ -31,14 +31,16 @@ const CategoriesManagePage: React.FC = () => {
 
   useEffect(() => {
     const loadData = async () => {
+      if (!serviceId) return;
+      
       setIsLoading(true);
       try {
         // Refresh data to ensure we have the latest
         await refreshData();
         
         // Get service and categories
-        const serviceData = getServiceById(serviceId || '');
-        const categoriesData = getCategoriesByService(serviceId || '');
+        const serviceData = getServiceById(serviceId);
+        const categoriesData = getCategoriesByService(serviceId);
         
         setService(serviceData);
         setCategories(categoriesData);
@@ -49,10 +51,18 @@ const CategoriesManagePage: React.FC = () => {
       }
     };
 
-    if (serviceId) {
-      loadData();
+    loadData();
+  }, [serviceId]); // Only depend on serviceId
+
+  // Update local state when data context changes
+  useEffect(() => {
+    if (!isLoading && serviceId) {
+      const serviceData = getServiceById(serviceId);
+      const categoriesData = getCategoriesByService(serviceId);
+      setService(serviceData);
+      setCategories(categoriesData);
     }
-  }, [serviceId, getServiceById, getCategoriesByService, refreshData]);
+  }, [serviceId, isLoading, getServiceById, getCategoriesByService]);
 
   if (isLoading) {
     return (

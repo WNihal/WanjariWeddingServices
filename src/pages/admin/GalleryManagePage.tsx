@@ -32,15 +32,17 @@ const GalleryManagePage: React.FC = () => {
 
   useEffect(() => {
     const loadData = async () => {
+      if (!categoryId) return;
+      
       setIsLoading(true);
       try {
         // Refresh data to ensure we have the latest
         await refreshData();
         
         // Get category, service, and images
-        const categoryData = getCategoryById(categoryId || '');
+        const categoryData = getCategoryById(categoryId);
         const serviceData = categoryData ? getServiceById(categoryData.serviceId) : undefined;
-        const imagesData = getImagesByCategory(categoryId || '');
+        const imagesData = getImagesByCategory(categoryId);
         
         setCategory(categoryData);
         setService(serviceData);
@@ -52,10 +54,21 @@ const GalleryManagePage: React.FC = () => {
       }
     };
 
-    if (categoryId) {
-      loadData();
+    loadData();
+  }, [categoryId]); // Only depend on categoryId
+
+  // Update local state when data context changes
+  useEffect(() => {
+    if (!isLoading && categoryId) {
+      const categoryData = getCategoryById(categoryId);
+      const serviceData = categoryData ? getServiceById(categoryData.serviceId) : undefined;
+      const imagesData = getImagesByCategory(categoryId);
+      
+      setCategory(categoryData);
+      setService(serviceData);
+      setImages(imagesData);
     }
-  }, [categoryId, getCategoryById, getServiceById, getImagesByCategory, refreshData]);
+  }, [categoryId, isLoading, getCategoryById, getServiceById, getImagesByCategory]);
 
   if (isLoading) {
     return (

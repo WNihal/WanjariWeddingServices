@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Service, Category, GalleryImage } from '../types';
 
 interface DataContextType {
@@ -40,20 +40,7 @@ export const DataProvider = ({ children }: DataProviderProps) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [images, setImages] = useState<GalleryImage[]>([]);
 
-  // Fetch initial data
-  useEffect(() => {
-    refreshData();
-  }, []);
-
-  const refreshData = async () => {
-    await Promise.all([
-      fetchServices(),
-      fetchCategories(),
-      fetchImages()
-    ]);
-  };
-
-  const fetchServices = async () => {
+  const fetchServices = useCallback(async () => {
     try {
       const response = await fetch('http://localhost:8080/api/services');
       if (response.ok) {
@@ -71,9 +58,9 @@ export const DataProvider = ({ children }: DataProviderProps) => {
     } catch (error) {
       console.error('Error fetching services:', error);
     }
-  };
+  }, []);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const response = await fetch('http://localhost:8080/api/categories');
       if (response.ok) {
@@ -91,9 +78,9 @@ export const DataProvider = ({ children }: DataProviderProps) => {
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
-  };
+  }, []);
 
-  const fetchImages = async () => {
+  const fetchImages = useCallback(async () => {
     try {
       const response = await fetch('http://localhost:8080/api/images');
       if (response.ok) {
@@ -110,7 +97,20 @@ export const DataProvider = ({ children }: DataProviderProps) => {
     } catch (error) {
       console.error('Error fetching images:', error);
     }
-  };
+  }, []);
+
+  const refreshData = useCallback(async () => {
+    await Promise.all([
+      fetchServices(),
+      fetchCategories(),
+      fetchImages()
+    ]);
+  }, [fetchServices, fetchCategories, fetchImages]);
+
+  // Fetch initial data
+  useEffect(() => {
+    refreshData();
+  }, [refreshData]);
 
   // Service operations
   const addService = async (service: Omit<Service, 'id'>) => {
@@ -293,22 +293,22 @@ export const DataProvider = ({ children }: DataProviderProps) => {
     }
   };
 
-  // Utility functions
-  const getServiceById = (id: string) => {
+  // Utility functions - memoized to prevent unnecessary re-renders
+  const getServiceById = useCallback((id: string) => {
     return services.find((service) => service.id === id);
-  };
+  }, [services]);
 
-  const getCategoryById = (id: string) => {
+  const getCategoryById = useCallback((id: string) => {
     return categories.find((category) => category.id === id);
-  };
+  }, [categories]);
 
-  const getCategoriesByService = (serviceId: string) => {
+  const getCategoriesByService = useCallback((serviceId: string) => {
     return categories.filter((category) => category.serviceId === serviceId);
-  };
+  }, [categories]);
 
-  const getImagesByCategory = (categoryId: string) => {
+  const getImagesByCategory = useCallback((categoryId: string) => {
     return images.filter((image) => image.categoryId === categoryId);
-  };
+  }, [images]);
 
   const value = {
     services,
