@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Pencil, Trash2, Plus, ArrowLeft } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
@@ -16,17 +16,54 @@ const GalleryManagePage: React.FC = () => {
     getImagesByCategory,
     addImage,
     updateImage,
-    deleteImage
+    deleteImage,
+    refreshData
   } = useData();
 
-  const category = getCategoryById(categoryId || '');
-  const service = category ? getServiceById(category.serviceId) : undefined;
-  const images = getImagesByCategory(categoryId || '');
+  const [isLoading, setIsLoading] = useState(true);
+  const [category, setCategory] = useState<any>(null);
+  const [service, setService] = useState<any>(null);
+  const [images, setImages] = useState<GalleryImage[]>([]);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingImage, setEditingImage] = useState<GalleryImage | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [imageToDelete, setImageToDelete] = useState<GalleryImage | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        // Refresh data to ensure we have the latest
+        await refreshData();
+        
+        // Get category, service, and images
+        const categoryData = getCategoryById(categoryId || '');
+        const serviceData = categoryData ? getServiceById(categoryData.serviceId) : undefined;
+        const imagesData = getImagesByCategory(categoryId || '');
+        
+        setCategory(categoryData);
+        setService(serviceData);
+        setImages(imagesData);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (categoryId) {
+      loadData();
+    }
+  }, [categoryId, getCategoryById, getServiceById, getImagesByCategory, refreshData]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy"></div>
+      </div>
+    );
+  }
 
   if (!category || !service) {
     return (
@@ -42,67 +79,32 @@ const GalleryManagePage: React.FC = () => {
     );
   }
 
-    console.log(categoryId);
-
   const handleAddImage = async (formData: FormData) => {
-    try {
-      const response = await fetch(`http://localhost:8080/api/images/${categoryId}`, {
-        method: 'POST',
-        body: formData,
-      });
-
-  console.log(response);
-
-      if (!response.ok) {
-        throw new Error('Failed to upload image');
-      }
-
-      const newImage = await response.json();
-      addImage(newImage);
-      setIsAddModalOpen(false);
-    } catch (error) {
-      console.error('Error uploading image:', error);
-    }
+    await addImage(formData);
+    setIsAddModalOpen(false);
+    // Refresh images after adding
+    const updatedImages = getImagesByCategory(categoryId || '');
+    setImages(updatedImages);
   };
 
   const handleUpdateImage = async (formData: FormData) => {
     if (editingImage) {
-      try {
-        const response = await fetch(`/api/images/${editingImage.id}`, {
-          method: 'PUT',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to update image');
-        }
-
-        const updatedImage = await response.json();
-        updateImage(editingImage.id, updatedImage);
-        setEditingImage(null);
-      } catch (error) {
-        console.error('Error updating image:', error);
-      }
+      await updateImage(editingImage.id, formData);
+      setEditingImage(null);
+      // Refresh images after updating
+      const updatedImages = getImagesByCategory(categoryId || '');
+      setImages(updatedImages);
     }
   };
 
   const handleDeleteImage = async () => {
     if (imageToDelete) {
-      try {
-        const response = await fetch(`/api/images/${imageToDelete.id}`, {
-          method: 'DELETE',
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to delete image');
-        }
-
-        deleteImage(imageToDelete.id);
-        setIsDeleteModalOpen(false);
-        setImageToDelete(null);
-      } catch (error) {
-        console.error('Error deleting image:', error);
-      }
+      await deleteImage(imageToDelete.id);
+      setIsDeleteModalOpen(false);
+      setImageToDelete(null);
+      // Refresh images after deleting
+      const updatedImages = getImagesByCategory(categoryId || '');
+      setImages(updatedImages);
     }
   };
 
@@ -155,7 +157,7 @@ const GalleryManagePage: React.FC = () => {
                 <div key={image.id} className="group relative rounded-lg overflow-hidden shadow-sm border border-gray-200">
                   <div className="aspect-w-16 aspect-h-12">
                     <img
-                      src={`/api/images/${image.fileName}`}
+                      src={image.url}
                       alt={image.caption || 'Gallery image'}
                       className="w-full h-48 object-cover"
                     />

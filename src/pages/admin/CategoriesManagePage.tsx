@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Pencil, Trash2, Plus, ArrowLeft, ImageIcon } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
@@ -16,16 +16,51 @@ const CategoriesManagePage: React.FC = () => {
     addCategory, 
     updateCategory, 
     deleteCategory,
-    getImagesByCategory 
+    getImagesByCategory,
+    refreshData
   } = useData();
   
-  const service = getServiceById(serviceId || '');
-  const categories = getCategoriesByService(serviceId || '');
+  const [isLoading, setIsLoading] = useState(true);
+  const [service, setService] = useState<any>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        // Refresh data to ensure we have the latest
+        await refreshData();
+        
+        // Get service and categories
+        const serviceData = getServiceById(serviceId || '');
+        const categoriesData = getCategoriesByService(serviceId || '');
+        
+        setService(serviceData);
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (serviceId) {
+      loadData();
+    }
+  }, [serviceId, getServiceById, getCategoriesByService, refreshData]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy"></div>
+      </div>
+    );
+  }
 
   // Redirect if service not found
   if (!service) {
@@ -42,15 +77,21 @@ const CategoriesManagePage: React.FC = () => {
     );
   }
 
-  const handleAddCategory = (categoryData: Omit<Category, 'id'>) => {
-    addCategory(categoryData);
+  const handleAddCategory = async (categoryData: Omit<Category, 'id'>) => {
+    await addCategory(categoryData);
     setIsAddModalOpen(false);
+    // Refresh categories after adding
+    const updatedCategories = getCategoriesByService(serviceId || '');
+    setCategories(updatedCategories);
   };
 
-  const handleUpdateCategory = (categoryData: Partial<Category>) => {
+  const handleUpdateCategory = async (categoryData: Partial<Category>) => {
     if (editingCategory) {
-      updateCategory(editingCategory.id, categoryData);
+      await updateCategory(editingCategory.id, categoryData);
       setEditingCategory(null);
+      // Refresh categories after updating
+      const updatedCategories = getCategoriesByService(serviceId || '');
+      setCategories(updatedCategories);
     }
   };
 
@@ -59,11 +100,14 @@ const CategoriesManagePage: React.FC = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleDeleteCategory = () => {
+  const handleDeleteCategory = async () => {
     if (categoryToDelete) {
-      deleteCategory(categoryToDelete.id);
+      await deleteCategory(categoryToDelete.id);
       setIsDeleteModalOpen(false);
       setCategoryToDelete(null);
+      // Refresh categories after deleting
+      const updatedCategories = getCategoriesByService(serviceId || '');
+      setCategories(updatedCategories);
     }
   };
 

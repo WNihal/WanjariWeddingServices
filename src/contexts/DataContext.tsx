@@ -18,6 +18,7 @@ interface DataContextType {
   getCategoryById: (id: string) => Category | undefined;
   getCategoriesByService: (serviceId: string) => Category[];
   getImagesByCategory: (categoryId: string) => GalleryImage[];
+  refreshData: () => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | null>(null);
@@ -41,17 +42,31 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
   // Fetch initial data
   useEffect(() => {
-    fetchServices();
-    fetchCategories();
-    fetchImages();
+    refreshData();
   }, []);
+
+  const refreshData = async () => {
+    await Promise.all([
+      fetchServices(),
+      fetchCategories(),
+      fetchImages()
+    ]);
+  };
 
   const fetchServices = async () => {
     try {
       const response = await fetch('http://localhost:8080/api/services');
       if (response.ok) {
         const data = await response.json();
-        setServices(data);
+        // Transform backend data to frontend format
+        const transformedServices = data.map((service: any) => ({
+          id: service.id.toString(),
+          name: service.name,
+          description: service.description,
+          thumbnail: service.thumbnail,
+          icon: service.icon
+        }));
+        setServices(transformedServices);
       }
     } catch (error) {
       console.error('Error fetching services:', error);
@@ -63,7 +78,15 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       const response = await fetch('http://localhost:8080/api/categories');
       if (response.ok) {
         const data = await response.json();
-        setCategories(data);
+        // Transform backend data to frontend format
+        const transformedCategories = data.map((category: any) => ({
+          id: category.id.toString(),
+          serviceId: category.service?.id?.toString() || '',
+          name: category.name,
+          description: category.description,
+          thumbnail: category.thumbnail
+        }));
+        setCategories(transformedCategories);
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -75,7 +98,14 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       const response = await fetch('http://localhost:8080/api/images');
       if (response.ok) {
         const data = await response.json();
-        setImages(data);
+        // Transform backend data to frontend format
+        const transformedImages = data.map((image: any) => ({
+          id: image.id.toString(),
+          categoryId: image.category?.id?.toString() || '',
+          url: `http://localhost:8080/api/images/${image.fileName}`,
+          caption: image.caption || ''
+        }));
+        setImages(transformedImages);
       }
     } catch (error) {
       console.error('Error fetching images:', error);
@@ -89,13 +119,13 @@ export const DataProvider = ({ children }: DataProviderProps) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify(service),
       });
 
       if (response.ok) {
-        const newService = await response.json();
-        setServices([...services, newService]);
+        await fetchServices(); // Refresh services list
       }
     } catch (error) {
       console.error('Error adding service:', error);
@@ -108,13 +138,13 @@ export const DataProvider = ({ children }: DataProviderProps) => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify(service),
       });
 
       if (response.ok) {
-        const updatedService = await response.json();
-        setServices(services.map(s => s.id === id ? updatedService : s));
+        await fetchServices(); // Refresh services list
       }
     } catch (error) {
       console.error('Error updating service:', error);
@@ -125,14 +155,13 @@ export const DataProvider = ({ children }: DataProviderProps) => {
     try {
       const response = await fetch(`http://localhost:8080/api/services/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
       });
 
       if (response.ok) {
-        setServices(services.filter(s => s.id !== id));
-        // Also remove associated categories and images
-        const categoryIds = categories.filter(c => c.serviceId === id).map(c => c.id);
-        setCategories(categories.filter(c => c.serviceId !== id));
-        setImages(images.filter(i => !categoryIds.includes(i.categoryId)));
+        await refreshData(); // Refresh all data since categories and images might be affected
       }
     } catch (error) {
       console.error('Error deleting service:', error);
@@ -142,17 +171,24 @@ export const DataProvider = ({ children }: DataProviderProps) => {
   // Category operations
   const addCategory = async (category: Omit<Category, 'id'>) => {
     try {
+      const categoryData = {
+        name: category.name,
+        description: category.description,
+        thumbnail: category.thumbnail,
+        service: { id: parseInt(category.serviceId) }
+      };
+
       const response = await fetch('http://localhost:8080/api/categories', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(category),
+        body: JSON.stringify(categoryData),
       });
 
       if (response.ok) {
-        const newCategory = await response.json();
-        setCategories([...categories, newCategory]);
+        await fetchCategories(); // Refresh categories list
       }
     } catch (error) {
       console.error('Error adding category:', error);
@@ -161,17 +197,24 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
   const updateCategory = async (id: string, category: Partial<Category>) => {
     try {
+      const categoryData = {
+        name: category.name,
+        description: category.description,
+        thumbnail: category.thumbnail,
+        service: category.serviceId ? { id: parseInt(category.serviceId) } : undefined
+      };
+
       const response = await fetch(`http://localhost:8080/api/categories/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(category),
+        body: JSON.stringify(categoryData),
       });
 
       if (response.ok) {
-        const updatedCategory = await response.json();
-        setCategories(categories.map(c => c.id === id ? updatedCategory : c));
+        await fetchCategories(); // Refresh categories list
       }
     } catch (error) {
       console.error('Error updating category:', error);
@@ -182,12 +225,14 @@ export const DataProvider = ({ children }: DataProviderProps) => {
     try {
       const response = await fetch(`http://localhost:8080/api/categories/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
       });
 
       if (response.ok) {
-        setCategories(categories.filter(c => c.id !== id));
-        // Also remove associated images
-        setImages(images.filter(i => i.categoryId !== id));
+        await fetchCategories(); // Refresh categories list
+        await fetchImages(); // Refresh images as they might be affected
       }
     } catch (error) {
       console.error('Error deleting category:', error);
@@ -197,14 +242,16 @@ export const DataProvider = ({ children }: DataProviderProps) => {
   // Image operations
   const addImage = async (formData: FormData) => {
     try {
-      const response = await fetch('http://localhost:8080/api/images', {
+      const response = await fetch(`http://localhost:8080/api/images/${formData.get('categoryId')}`, {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
         body: formData,
       });
 
       if (response.ok) {
-        const newImage = await response.json();
-        setImages([...images, newImage]);
+        await fetchImages(); // Refresh images list
       }
     } catch (error) {
       console.error('Error adding image:', error);
@@ -215,12 +262,14 @@ export const DataProvider = ({ children }: DataProviderProps) => {
     try {
       const response = await fetch(`http://localhost:8080/api/images/${id}`, {
         method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
         body: formData,
       });
 
       if (response.ok) {
-        const updatedImage = await response.json();
-        setImages(images.map(i => i.id === id ? updatedImage : i));
+        await fetchImages(); // Refresh images list
       }
     } catch (error) {
       console.error('Error updating image:', error);
@@ -231,10 +280,13 @@ export const DataProvider = ({ children }: DataProviderProps) => {
     try {
       const response = await fetch(`http://localhost:8080/api/images/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
       });
 
       if (response.ok) {
-        setImages(images.filter(i => i.id !== id));
+        await fetchImages(); // Refresh images list
       }
     } catch (error) {
       console.error('Error deleting image:', error);
@@ -275,6 +327,7 @@ export const DataProvider = ({ children }: DataProviderProps) => {
     getCategoryById,
     getCategoriesByService,
     getImagesByCategory,
+    refreshData,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
