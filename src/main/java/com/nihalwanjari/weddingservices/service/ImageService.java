@@ -1,6 +1,8 @@
 package com.nihalwanjari.weddingservices.service;
 
+import com.nihalwanjari.weddingservices.entity.Category;
 import com.nihalwanjari.weddingservices.entity.GalleryImage;
+import com.nihalwanjari.weddingservices.repository.CategoryRepository;
 import com.nihalwanjari.weddingservices.repository.GalleryImageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ImageService {
     private final GalleryImageRepository imageRepository;
+    private final CategoryRepository categoryRepository;
     private final String uploadDir = "./uploads/images";
 
     public List<GalleryImage> getAllImages() {
@@ -27,6 +30,10 @@ public class ImageService {
     }
 
     public GalleryImage uploadImage(Long categoryId, MultipartFile file, String caption) throws IOException {
+        // Find the category first
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new RuntimeException("Category not found with id: " + categoryId));
+
         // Create upload directory if it doesn't exist
         Path uploadPath = Paths.get(uploadDir);
         if (!Files.exists(uploadPath)) {
@@ -44,7 +51,7 @@ public class ImageService {
         GalleryImage image = GalleryImage.builder()
                 .fileName(fileName)
                 .caption(caption)
-                .id(categoryId)
+                .category(category)  // Set the category object, not the ID
                 .build();
 
         return imageRepository.save(image);
@@ -66,7 +73,10 @@ public class ImageService {
             existingImage.setFileName(fileName);
         }
 
-        existingImage.setCaption(caption);
+        if (caption != null) {
+            existingImage.setCaption(caption);
+        }
+        
         return imageRepository.save(existingImage);
     }
 
