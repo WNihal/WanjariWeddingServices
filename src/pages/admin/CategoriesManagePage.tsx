@@ -16,11 +16,10 @@ const CategoriesManagePage: React.FC = () => {
     addCategory, 
     updateCategory, 
     deleteCategory,
-    getImagesByCategory,
-    refreshData
+    getImagesByCategory
   } = useData();
   
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [service, setService] = useState<any>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   
@@ -29,51 +28,18 @@ const CategoriesManagePage: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
+  // Update service and categories when data changes
   useEffect(() => {
-    const loadData = async () => {
-      if (!serviceId) return;
-      
-      setIsLoading(true);
-      try {
-        // Refresh data to ensure we have the latest
-        await refreshData();
-        
-        // Get service and categories
-        const serviceData = getServiceById(serviceId);
-        const categoriesData = getCategoriesByService(serviceId);
-        
-        setService(serviceData);
-        setCategories(categoriesData);
-      } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, [serviceId]); // Only depend on serviceId
-
-  // Update local state when data context changes
-  useEffect(() => {
-    if (!isLoading && serviceId) {
+    if (serviceId) {
       const serviceData = getServiceById(serviceId);
       const categoriesData = getCategoriesByService(serviceId);
       setService(serviceData);
       setCategories(categoriesData);
     }
-  }, [serviceId, isLoading, getServiceById, getCategoriesByService]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy"></div>
-      </div>
-    );
-  }
+  }, [serviceId, getServiceById, getCategoriesByService]);
 
   // Redirect if service not found
-  if (!service) {
+  if (!service && serviceId) {
     return (
       <div className="text-center py-8">
         <p className="text-gray-600 mb-4">Service not found</p>
@@ -88,20 +54,30 @@ const CategoriesManagePage: React.FC = () => {
   }
 
   const handleAddCategory = async (categoryData: Omit<Category, 'id'>) => {
-    await addCategory(categoryData);
-    setIsAddModalOpen(false);
-    // Refresh categories after adding
-    const updatedCategories = getCategoriesByService(serviceId || '');
-    setCategories(updatedCategories);
+    setIsLoading(true);
+    try {
+      await addCategory(categoryData);
+      setIsAddModalOpen(false);
+    } catch (error) {
+      console.error('Failed to add category:', error);
+      // You could add error handling UI here
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleUpdateCategory = async (categoryData: Partial<Category>) => {
     if (editingCategory) {
-      await updateCategory(editingCategory.id, categoryData);
-      setEditingCategory(null);
-      // Refresh categories after updating
-      const updatedCategories = getCategoriesByService(serviceId || '');
-      setCategories(updatedCategories);
+      setIsLoading(true);
+      try {
+        await updateCategory(editingCategory.id, categoryData);
+        setEditingCategory(null);
+      } catch (error) {
+        console.error('Failed to update category:', error);
+        // You could add error handling UI here
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -112,12 +88,17 @@ const CategoriesManagePage: React.FC = () => {
 
   const handleDeleteCategory = async () => {
     if (categoryToDelete) {
-      await deleteCategory(categoryToDelete.id);
-      setIsDeleteModalOpen(false);
-      setCategoryToDelete(null);
-      // Refresh categories after deleting
-      const updatedCategories = getCategoriesByService(serviceId || '');
-      setCategories(updatedCategories);
+      setIsLoading(true);
+      try {
+        await deleteCategory(categoryToDelete.id);
+        setIsDeleteModalOpen(false);
+        setCategoryToDelete(null);
+      } catch (error) {
+        console.error('Failed to delete category:', error);
+        // You could add error handling UI here
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -135,7 +116,7 @@ const CategoriesManagePage: React.FC = () => {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">{service.name} Categories</h1>
+          <h1 className="text-2xl font-bold text-gray-800">{service?.name} Categories</h1>
           <p className="text-gray-600">Manage categories for this service</p>
         </div>
       </div>
@@ -143,7 +124,8 @@ const CategoriesManagePage: React.FC = () => {
       <div className="flex justify-end mb-6">
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="bg-burgundy hover:bg-burgundy/90 text-white px-4 py-2 rounded-md flex items-center transition-colors"
+          disabled={isLoading}
+          className="bg-burgundy hover:bg-burgundy/90 text-white px-4 py-2 rounded-md flex items-center transition-colors disabled:opacity-50"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Category
@@ -216,13 +198,15 @@ const CategoriesManagePage: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
                           onClick={() => setEditingCategory(category)}
-                          className="text-indigo-600 hover:text-indigo-900 mr-3"
+                          disabled={isLoading}
+                          className="text-indigo-600 hover:text-indigo-900 mr-3 disabled:opacity-50"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => openDeleteModal(category)}
-                          className="text-red-600 hover:text-red-900"
+                          disabled={isLoading}
+                          className="text-red-600 hover:text-red-900 disabled:opacity-50"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -283,6 +267,16 @@ const CategoriesManagePage: React.FC = () => {
         onConfirm={handleDeleteCategory}
         onCancel={() => setIsDeleteModalOpen(false)}
       />
+
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg shadow-lg">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy mx-auto"></div>
+            <p className="mt-2 text-sm text-gray-600">Processing...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

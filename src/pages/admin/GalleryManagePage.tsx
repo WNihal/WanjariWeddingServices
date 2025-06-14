@@ -16,11 +16,10 @@ const GalleryManagePage: React.FC = () => {
     getImagesByCategory,
     addImage,
     updateImage,
-    deleteImage,
-    refreshData
+    deleteImage
   } = useData();
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [category, setCategory] = useState<any>(null);
   const [service, setService] = useState<any>(null);
   const [images, setImages] = useState<GalleryImage[]>([]);
@@ -30,36 +29,9 @@ const GalleryManagePage: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [imageToDelete, setImageToDelete] = useState<GalleryImage | null>(null);
 
+  // Update category, service, and images when data changes
   useEffect(() => {
-    const loadData = async () => {
-      if (!categoryId) return;
-      
-      setIsLoading(true);
-      try {
-        // Refresh data to ensure we have the latest
-        await refreshData();
-        
-        // Get category, service, and images
-        const categoryData = getCategoryById(categoryId);
-        const serviceData = categoryData ? getServiceById(categoryData.serviceId) : undefined;
-        const imagesData = getImagesByCategory(categoryId);
-        
-        setCategory(categoryData);
-        setService(serviceData);
-        setImages(imagesData);
-      } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, [categoryId]); // Only depend on categoryId
-
-  // Update local state when data context changes
-  useEffect(() => {
-    if (!isLoading && categoryId) {
+    if (categoryId) {
       const categoryData = getCategoryById(categoryId);
       const serviceData = categoryData ? getServiceById(categoryData.serviceId) : undefined;
       const imagesData = getImagesByCategory(categoryId);
@@ -68,15 +40,7 @@ const GalleryManagePage: React.FC = () => {
       setService(serviceData);
       setImages(imagesData);
     }
-  }, [categoryId, isLoading, getCategoryById, getServiceById, getImagesByCategory]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy"></div>
-      </div>
-    );
-  }
+  }, [categoryId, getCategoryById, getServiceById, getImagesByCategory]);
 
   if (!category || !service) {
     return (
@@ -93,31 +57,46 @@ const GalleryManagePage: React.FC = () => {
   }
 
   const handleAddImage = async (formData: FormData) => {
-    await addImage(formData);
-    setIsAddModalOpen(false);
-    // Refresh images after adding
-    const updatedImages = getImagesByCategory(categoryId || '');
-    setImages(updatedImages);
+    setIsLoading(true);
+    try {
+      await addImage(formData);
+      setIsAddModalOpen(false);
+    } catch (error) {
+      console.error('Failed to add image:', error);
+      // You could add error handling UI here
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleUpdateImage = async (formData: FormData) => {
     if (editingImage) {
-      await updateImage(editingImage.id, formData);
-      setEditingImage(null);
-      // Refresh images after updating
-      const updatedImages = getImagesByCategory(categoryId || '');
-      setImages(updatedImages);
+      setIsLoading(true);
+      try {
+        await updateImage(editingImage.id, formData);
+        setEditingImage(null);
+      } catch (error) {
+        console.error('Failed to update image:', error);
+        // You could add error handling UI here
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
   const handleDeleteImage = async () => {
     if (imageToDelete) {
-      await deleteImage(imageToDelete.id);
-      setIsDeleteModalOpen(false);
-      setImageToDelete(null);
-      // Refresh images after deleting
-      const updatedImages = getImagesByCategory(categoryId || '');
-      setImages(updatedImages);
+      setIsLoading(true);
+      try {
+        await deleteImage(imageToDelete.id);
+        setIsDeleteModalOpen(false);
+        setImageToDelete(null);
+      } catch (error) {
+        console.error('Failed to delete image:', error);
+        // You could add error handling UI here
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -142,7 +121,8 @@ const GalleryManagePage: React.FC = () => {
       <div className="flex justify-end mb-6">
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="bg-burgundy hover:bg-burgundy/90 text-white px-4 py-2 rounded-md flex items-center transition-colors"
+          disabled={isLoading}
+          className="bg-burgundy hover:bg-burgundy/90 text-white px-4 py-2 rounded-md flex items-center transition-colors disabled:opacity-50"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Image
@@ -186,7 +166,8 @@ const GalleryManagePage: React.FC = () => {
                     <div className="flex space-x-4">
                       <button
                         onClick={() => setEditingImage(image)}
-                        className="p-2 bg-white rounded-full text-gray-800 hover:bg-gray-100 transition-colors"
+                        disabled={isLoading}
+                        className="p-2 bg-white rounded-full text-gray-800 hover:bg-gray-100 transition-colors disabled:opacity-50"
                       >
                         <Pencil className="h-5 w-5" />
                       </button>
@@ -195,7 +176,8 @@ const GalleryManagePage: React.FC = () => {
                           setImageToDelete(image);
                           setIsDeleteModalOpen(true);
                         }}
-                        className="p-2 bg-white rounded-full text-red-600 hover:bg-gray-100 transition-colors"
+                        disabled={isLoading}
+                        className="p-2 bg-white rounded-full text-red-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
                       >
                         <Trash2 className="h-5 w-5" />
                       </button>
@@ -255,6 +237,16 @@ const GalleryManagePage: React.FC = () => {
         onConfirm={handleDeleteImage}
         onCancel={() => setIsDeleteModalOpen(false)}
       />
+
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg shadow-lg">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy mx-auto"></div>
+            <p className="mt-2 text-sm text-gray-600">Processing...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

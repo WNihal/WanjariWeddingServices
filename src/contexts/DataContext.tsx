@@ -54,9 +54,11 @@ export const DataProvider = ({ children }: DataProviderProps) => {
           icon: service.icon
         }));
         setServices(transformedServices);
+        return transformedServices;
       }
     } catch (error) {
       console.error('Error fetching services:', error);
+      return [];
     }
   }, []);
 
@@ -74,9 +76,11 @@ export const DataProvider = ({ children }: DataProviderProps) => {
           thumbnail: category.thumbnail
         }));
         setCategories(transformedCategories);
+        return transformedCategories;
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
+      return [];
     }
   }, []);
 
@@ -93,9 +97,11 @@ export const DataProvider = ({ children }: DataProviderProps) => {
           caption: image.caption || ''
         }));
         setImages(transformedImages);
+        return transformedImages;
       }
     } catch (error) {
       console.error('Error fetching images:', error);
+      return [];
     }
   }, []);
 
@@ -125,10 +131,14 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       });
 
       if (response.ok) {
-        await fetchServices(); // Refresh services list
+        // Immediately refresh services to show the new one
+        await fetchServices();
+      } else {
+        throw new Error('Failed to add service');
       }
     } catch (error) {
       console.error('Error adding service:', error);
+      throw error;
     }
   };
 
@@ -144,10 +154,14 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       });
 
       if (response.ok) {
-        await fetchServices(); // Refresh services list
+        // Immediately refresh services to show the updated one
+        await fetchServices();
+      } else {
+        throw new Error('Failed to update service');
       }
     } catch (error) {
       console.error('Error updating service:', error);
+      throw error;
     }
   };
 
@@ -161,10 +175,14 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       });
 
       if (response.ok) {
-        await refreshData(); // Refresh all data since categories and images might be affected
+        // Refresh all data since categories and images might be affected
+        await refreshData();
+      } else {
+        throw new Error('Failed to delete service');
       }
     } catch (error) {
       console.error('Error deleting service:', error);
+      throw error;
     }
   };
 
@@ -188,10 +206,14 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       });
 
       if (response.ok) {
-        await fetchCategories(); // Refresh categories list
+        // Immediately refresh categories to show the new one
+        await fetchCategories();
+      } else {
+        throw new Error('Failed to add category');
       }
     } catch (error) {
       console.error('Error adding category:', error);
+      throw error;
     }
   };
 
@@ -214,10 +236,14 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       });
 
       if (response.ok) {
-        await fetchCategories(); // Refresh categories list
+        // Immediately refresh categories to show the updated one
+        await fetchCategories();
+      } else {
+        throw new Error('Failed to update category');
       }
     } catch (error) {
       console.error('Error updating category:', error);
+      throw error;
     }
   };
 
@@ -231,11 +257,15 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       });
 
       if (response.ok) {
-        await fetchCategories(); // Refresh categories list
-        await fetchImages(); // Refresh images as they might be affected
+        // Refresh categories and images as they might be affected
+        await fetchCategories();
+        await fetchImages();
+      } else {
+        throw new Error('Failed to delete category');
       }
     } catch (error) {
       console.error('Error deleting category:', error);
+      throw error;
     }
   };
 
@@ -251,10 +281,14 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       });
 
       if (response.ok) {
-        await fetchImages(); // Refresh images list
+        // Immediately refresh images to show the new one
+        await fetchImages();
+      } else {
+        throw new Error('Failed to add image');
       }
     } catch (error) {
       console.error('Error adding image:', error);
+      throw error;
     }
   };
 
@@ -269,10 +303,14 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       });
 
       if (response.ok) {
-        await fetchImages(); // Refresh images list
+        // Immediately refresh images to show the updated one
+        await fetchImages();
+      } else {
+        throw new Error('Failed to update image');
       }
     } catch (error) {
       console.error('Error updating image:', error);
+      throw error;
     }
   };
 
@@ -286,10 +324,14 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       });
 
       if (response.ok) {
-        await fetchImages(); // Refresh images list
+        // Immediately refresh images to show the deletion
+        await fetchImages();
+      } else {
+        throw new Error('Failed to delete image');
       }
     } catch (error) {
       console.error('Error deleting image:', error);
+      throw error;
     }
   };
 

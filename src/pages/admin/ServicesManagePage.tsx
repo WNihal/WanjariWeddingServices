@@ -13,16 +13,33 @@ const ServicesManagePage: React.FC = () => {
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleAddService = (serviceData: Omit<Service, 'id'>) => {
-    addService(serviceData);
-    setIsAddModalOpen(false);
+  const handleAddService = async (serviceData: Omit<Service, 'id'>) => {
+    setIsLoading(true);
+    try {
+      await addService(serviceData);
+      setIsAddModalOpen(false);
+    } catch (error) {
+      console.error('Failed to add service:', error);
+      // You could add error handling UI here
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleUpdateService = (serviceData: Partial<Service>) => {
+  const handleUpdateService = async (serviceData: Partial<Service>) => {
     if (editingService) {
-      updateService(editingService.id, serviceData);
-      setEditingService(null);
+      setIsLoading(true);
+      try {
+        await updateService(editingService.id, serviceData);
+        setEditingService(null);
+      } catch (error) {
+        console.error('Failed to update service:', error);
+        // You could add error handling UI here
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -31,11 +48,19 @@ const ServicesManagePage: React.FC = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleDeleteService = () => {
+  const handleDeleteService = async () => {
     if (serviceToDelete) {
-      deleteService(serviceToDelete.id);
-      setIsDeleteModalOpen(false);
-      setServiceToDelete(null);
+      setIsLoading(true);
+      try {
+        await deleteService(serviceToDelete.id);
+        setIsDeleteModalOpen(false);
+        setServiceToDelete(null);
+      } catch (error) {
+        console.error('Failed to delete service:', error);
+        // You could add error handling UI here
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -61,7 +86,8 @@ const ServicesManagePage: React.FC = () => {
         </div>
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="bg-burgundy hover:bg-burgundy/90 text-white px-4 py-2 rounded-md flex items-center transition-colors"
+          disabled={isLoading}
+          className="bg-burgundy hover:bg-burgundy/90 text-white px-4 py-2 rounded-md flex items-center transition-colors disabled:opacity-50"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Service
@@ -140,13 +166,15 @@ const ServicesManagePage: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
                           onClick={() => setEditingService(service)}
-                          className="text-indigo-600 hover:text-indigo-900 mr-3"
+                          disabled={isLoading}
+                          className="text-indigo-600 hover:text-indigo-900 mr-3 disabled:opacity-50"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => openDeleteModal(service)}
-                          className="text-red-600 hover:text-red-900"
+                          disabled={isLoading}
+                          className="text-red-600 hover:text-red-900 disabled:opacity-50"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -205,6 +233,16 @@ const ServicesManagePage: React.FC = () => {
         onConfirm={handleDeleteService}
         onCancel={() => setIsDeleteModalOpen(false)}
       />
+
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg shadow-lg">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-burgundy mx-auto"></div>
+            <p className="mt-2 text-sm text-gray-600">Processing...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
