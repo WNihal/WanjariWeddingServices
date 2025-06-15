@@ -22,14 +22,24 @@ public class ImageService {
     private final String uploadDir = "./uploads/images";
 
     public List<GalleryImage> getAllImages() {
-        return imageRepository.findAll();
+        List<GalleryImage> images = imageRepository.findAll();
+        System.out.println("ImageService: Found " + images.size() + " images");
+        for (GalleryImage image : images) {
+            System.out.println("Image: ID=" + image.getId() + ", FileName=" + image.getFileName() + 
+                             ", CategoryID=" + (image.getCategory() != null ? image.getCategory().getId() : "null"));
+        }
+        return images;
     }
 
     public List<GalleryImage> getImagesByCategory(Long categoryId) {
-        return imageRepository.findByCategoryId(categoryId);
+        List<GalleryImage> images = imageRepository.findByCategoryId(categoryId);
+        System.out.println("ImageService: Found " + images.size() + " images for category " + categoryId);
+        return images;
     }
 
     public GalleryImage uploadImage(Long categoryId, MultipartFile file, String caption) throws IOException {
+        System.out.println("ImageService: Uploading image for category " + categoryId);
+        
         // Find the category first
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + categoryId));
@@ -54,10 +64,13 @@ public class ImageService {
                 .category(category)  // Set the category object, not the ID
                 .build();
 
-        return imageRepository.save(image);
+        GalleryImage savedImage = imageRepository.save(image);
+        System.out.println("ImageService: Created image with ID - " + savedImage.getId());
+        return savedImage;
     }
 
     public GalleryImage updateImage(Long id, MultipartFile file, String caption) throws IOException {
+        System.out.println("ImageService: Updating image with ID - " + id);
         GalleryImage existingImage = imageRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Image not found"));
 
@@ -77,10 +90,13 @@ public class ImageService {
             existingImage.setCaption(caption);
         }
         
-        return imageRepository.save(existingImage);
+        GalleryImage updatedImage = imageRepository.save(existingImage);
+        System.out.println("ImageService: Updated image with ID - " + updatedImage.getId());
+        return updatedImage;
     }
 
     public void deleteImage(Long id) throws IOException {
+        System.out.println("ImageService: Deleting image with ID - " + id);
         GalleryImage image = imageRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Image not found"));
 
@@ -90,5 +106,6 @@ public class ImageService {
 
         // Delete from database
         imageRepository.delete(image);
+        System.out.println("ImageService: Deleted image with ID - " + id);
     }
 }

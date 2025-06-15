@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/images")
@@ -21,13 +22,18 @@ public class ImageController {
     private final String uploadDir = "./uploads/images";
 
     @GetMapping
-    public ResponseEntity<?> getAllImages() {
-        return ResponseEntity.ok(imageService.getAllImages());
+    public ResponseEntity<List<GalleryImage>> getAllImages() {
+        System.out.println("ImageController: GET /api/images called");
+        List<GalleryImage> images = imageService.getAllImages();
+        System.out.println("ImageController: Returning " + images.size() + " images");
+        return ResponseEntity.ok(images);
     }
 
     @GetMapping("/category/{categoryId}")
-    public ResponseEntity<?> getImagesByCategory(@PathVariable Long categoryId) {
-        return ResponseEntity.ok(imageService.getImagesByCategory(categoryId));
+    public ResponseEntity<List<GalleryImage>> getImagesByCategory(@PathVariable Long categoryId) {
+        System.out.println("ImageController: GET /api/images/category/" + categoryId + " called");
+        List<GalleryImage> images = imageService.getImagesByCategory(categoryId);
+        return ResponseEntity.ok(images);
     }
 
     @PostMapping("/{categoryId}")
@@ -35,7 +41,9 @@ public class ImageController {
             @PathVariable Long categoryId,
             @RequestParam("file") MultipartFile file,
             @RequestParam(required = false) String caption) throws IOException {
-        return ResponseEntity.ok(imageService.uploadImage(categoryId, file, caption));
+        System.out.println("ImageController: POST /api/images/" + categoryId + " called");
+        GalleryImage uploadedImage = imageService.uploadImage(categoryId, file, caption);
+        return ResponseEntity.ok(uploadedImage);
     }
 
     @GetMapping("/{fileName}")
@@ -57,11 +65,14 @@ public class ImageController {
             @PathVariable Long id,
             @RequestParam(required = false) MultipartFile file,
             @RequestParam(required = false) String caption) throws IOException {
-        return ResponseEntity.ok(imageService.updateImage(id, file, caption));
+        System.out.println("ImageController: PUT /api/images/" + id + " called");
+        GalleryImage updatedImage = imageService.updateImage(id, file, caption);
+        return ResponseEntity.ok(updatedImage);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteImage(@PathVariable Long id) throws IOException {
+        System.out.println("ImageController: DELETE /api/images/" + id + " called");
         imageService.deleteImage(id);
         return ResponseEntity.ok().build();
     }

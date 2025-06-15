@@ -42,9 +42,12 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
   const fetchServices = useCallback(async () => {
     try {
+      console.log('Fetching services...');
       const response = await fetch('http://localhost:8080/api/services');
       if (response.ok) {
         const data = await response.json();
+        console.log('Raw services data from backend:', data);
+        
         // Transform backend data to frontend format
         const transformedServices = data.map((service: any) => ({
           id: service.id.toString(),
@@ -53,8 +56,12 @@ export const DataProvider = ({ children }: DataProviderProps) => {
           thumbnail: service.thumbnail,
           icon: service.icon
         }));
+        
+        console.log('Transformed services:', transformedServices);
         setServices(transformedServices);
         return transformedServices;
+      } else {
+        console.error('Failed to fetch services:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error fetching services:', error);
@@ -64,9 +71,12 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
   const fetchCategories = useCallback(async () => {
     try {
+      console.log('Fetching categories...');
       const response = await fetch('http://localhost:8080/api/categories');
       if (response.ok) {
         const data = await response.json();
+        console.log('Raw categories data from backend:', data);
+        
         // Transform backend data to frontend format
         const transformedCategories = data.map((category: any) => ({
           id: category.id.toString(),
@@ -75,8 +85,12 @@ export const DataProvider = ({ children }: DataProviderProps) => {
           description: category.description,
           thumbnail: category.thumbnail
         }));
+        
+        console.log('Transformed categories:', transformedCategories);
         setCategories(transformedCategories);
         return transformedCategories;
+      } else {
+        console.error('Failed to fetch categories:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -86,9 +100,12 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
   const fetchImages = useCallback(async () => {
     try {
+      console.log('Fetching images...');
       const response = await fetch('http://localhost:8080/api/images');
       if (response.ok) {
         const data = await response.json();
+        console.log('Raw images data from backend:', data);
+        
         // Transform backend data to frontend format
         const transformedImages = data.map((image: any) => ({
           id: image.id.toString(),
@@ -96,8 +113,12 @@ export const DataProvider = ({ children }: DataProviderProps) => {
           url: `http://localhost:8080/api/images/${image.fileName}`,
           caption: image.caption || ''
         }));
+        
+        console.log('Transformed images:', transformedImages);
         setImages(transformedImages);
         return transformedImages;
+      } else {
+        console.error('Failed to fetch images:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error fetching images:', error);
@@ -106,6 +127,7 @@ export const DataProvider = ({ children }: DataProviderProps) => {
   }, []);
 
   const refreshData = useCallback(async () => {
+    console.log('Refreshing all data...');
     await Promise.all([
       fetchServices(),
       fetchCategories(),
@@ -115,12 +137,14 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
   // Fetch initial data
   useEffect(() => {
+    console.log('Initial data fetch...');
     refreshData();
   }, [refreshData]);
 
   // Service operations
   const addService = async (service: Omit<Service, 'id'>) => {
     try {
+      console.log('Adding service:', service);
       const response = await fetch('http://localhost:8080/api/services', {
         method: 'POST',
         headers: {
@@ -131,9 +155,11 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       });
 
       if (response.ok) {
+        console.log('Service added successfully');
         // Immediately refresh services to show the new one
         await fetchServices();
       } else {
+        console.error('Failed to add service:', response.status, response.statusText);
         throw new Error('Failed to add service');
       }
     } catch (error) {
@@ -144,6 +170,7 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
   const updateService = async (id: string, service: Partial<Service>) => {
     try {
+      console.log('Updating service:', id, service);
       const response = await fetch(`http://localhost:8080/api/services/${id}`, {
         method: 'PUT',
         headers: {
@@ -154,9 +181,11 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       });
 
       if (response.ok) {
+        console.log('Service updated successfully');
         // Immediately refresh services to show the updated one
         await fetchServices();
       } else {
+        console.error('Failed to update service:', response.status, response.statusText);
         throw new Error('Failed to update service');
       }
     } catch (error) {
@@ -167,6 +196,7 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
   const deleteService = async (id: string) => {
     try {
+      console.log('Deleting service:', id);
       const response = await fetch(`http://localhost:8080/api/services/${id}`, {
         method: 'DELETE',
         headers: {
@@ -175,9 +205,11 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       });
 
       if (response.ok) {
+        console.log('Service deleted successfully');
         // Refresh all data since categories and images might be affected
         await refreshData();
       } else {
+        console.error('Failed to delete service:', response.status, response.statusText);
         throw new Error('Failed to delete service');
       }
     } catch (error) {
@@ -189,6 +221,7 @@ export const DataProvider = ({ children }: DataProviderProps) => {
   // Category operations
   const addCategory = async (category: Omit<Category, 'id'>) => {
     try {
+      console.log('Adding category:', category);
       const categoryData = {
         name: category.name,
         description: category.description,
@@ -206,9 +239,11 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       });
 
       if (response.ok) {
+        console.log('Category added successfully');
         // Immediately refresh categories to show the new one
         await fetchCategories();
       } else {
+        console.error('Failed to add category:', response.status, response.statusText);
         throw new Error('Failed to add category');
       }
     } catch (error) {
@@ -219,6 +254,7 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
   const updateCategory = async (id: string, category: Partial<Category>) => {
     try {
+      console.log('Updating category:', id, category);
       const categoryData = {
         name: category.name,
         description: category.description,
@@ -236,9 +272,11 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       });
 
       if (response.ok) {
+        console.log('Category updated successfully');
         // Immediately refresh categories to show the updated one
         await fetchCategories();
       } else {
+        console.error('Failed to update category:', response.status, response.statusText);
         throw new Error('Failed to update category');
       }
     } catch (error) {
@@ -249,6 +287,7 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
   const deleteCategory = async (id: string) => {
     try {
+      console.log('Deleting category:', id);
       const response = await fetch(`http://localhost:8080/api/categories/${id}`, {
         method: 'DELETE',
         headers: {
@@ -257,10 +296,12 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       });
 
       if (response.ok) {
+        console.log('Category deleted successfully');
         // Refresh categories and images as they might be affected
         await fetchCategories();
         await fetchImages();
       } else {
+        console.error('Failed to delete category:', response.status, response.statusText);
         throw new Error('Failed to delete category');
       }
     } catch (error) {
@@ -272,6 +313,7 @@ export const DataProvider = ({ children }: DataProviderProps) => {
   // Image operations
   const addImage = async (formData: FormData) => {
     try {
+      console.log('Adding image for category:', formData.get('categoryId'));
       const response = await fetch(`http://localhost:8080/api/images/${formData.get('categoryId')}`, {
         method: 'POST',
         headers: {
@@ -281,9 +323,11 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       });
 
       if (response.ok) {
+        console.log('Image added successfully');
         // Immediately refresh images to show the new one
         await fetchImages();
       } else {
+        console.error('Failed to add image:', response.status, response.statusText);
         throw new Error('Failed to add image');
       }
     } catch (error) {
@@ -294,6 +338,7 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
   const updateImage = async (id: string, formData: FormData) => {
     try {
+      console.log('Updating image:', id);
       const response = await fetch(`http://localhost:8080/api/images/${id}`, {
         method: 'PUT',
         headers: {
@@ -303,9 +348,11 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       });
 
       if (response.ok) {
+        console.log('Image updated successfully');
         // Immediately refresh images to show the updated one
         await fetchImages();
       } else {
+        console.error('Failed to update image:', response.status, response.statusText);
         throw new Error('Failed to update image');
       }
     } catch (error) {
@@ -316,6 +363,7 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
   const deleteImage = async (id: string) => {
     try {
+      console.log('Deleting image:', id);
       const response = await fetch(`http://localhost:8080/api/images/${id}`, {
         method: 'DELETE',
         headers: {
@@ -324,9 +372,11 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       });
 
       if (response.ok) {
+        console.log('Image deleted successfully');
         // Immediately refresh images to show the deletion
         await fetchImages();
       } else {
+        console.error('Failed to delete image:', response.status, response.statusText);
         throw new Error('Failed to delete image');
       }
     } catch (error) {
@@ -337,19 +387,27 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
   // Utility functions - memoized to prevent unnecessary re-renders
   const getServiceById = useCallback((id: string) => {
-    return services.find((service) => service.id === id);
+    const service = services.find((service) => service.id === id);
+    console.log(`Getting service by ID ${id}:`, service);
+    return service;
   }, [services]);
 
   const getCategoryById = useCallback((id: string) => {
-    return categories.find((category) => category.id === id);
+    const category = categories.find((category) => category.id === id);
+    console.log(`Getting category by ID ${id}:`, category);
+    return category;
   }, [categories]);
 
   const getCategoriesByService = useCallback((serviceId: string) => {
-    return categories.filter((category) => category.serviceId === serviceId);
+    const serviceCategories = categories.filter((category) => category.serviceId === serviceId);
+    console.log(`Getting categories for service ${serviceId}:`, serviceCategories);
+    return serviceCategories;
   }, [categories]);
 
   const getImagesByCategory = useCallback((categoryId: string) => {
-    return images.filter((image) => image.categoryId === categoryId);
+    const categoryImages = images.filter((image) => image.categoryId === categoryId);
+    console.log(`Getting images for category ${categoryId}:`, categoryImages);
+    return categoryImages;
   }, [images]);
 
   const value = {
