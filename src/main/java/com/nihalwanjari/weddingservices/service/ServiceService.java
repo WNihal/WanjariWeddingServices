@@ -12,10 +12,11 @@ public class ServiceService {
     private final ServiceRepository serviceRepository;
 
     public List<Service> getAllServices() {
-        List<Service> services = serviceRepository.findAll();
+        List<Service> services = serviceRepository.findAllOrderById();
         System.out.println("ServiceService: Found " + services.size() + " services");
-        for (Service service : services) {
-            System.out.println("Service: ID=" + service.getId() + ", Name=" + service.getName());
+        for (int i = 0; i < services.size(); i++) {
+            Service service = services.get(i);
+            System.out.println("Service " + (i + 1) + ": ID=" + service.getId() + ", Name=" + service.getName());
         }
         return services;
     }
@@ -24,6 +25,11 @@ public class ServiceService {
         System.out.println("ServiceService: Creating service - " + service.getName());
         Service savedService = serviceRepository.save(service);
         System.out.println("ServiceService: Created service with ID - " + savedService.getId());
+        
+        // Verify the service was saved by checking total count
+        long totalServices = serviceRepository.count();
+        System.out.println("ServiceService: Total services in database: " + totalServices);
+        
         return savedService;
     }
 
@@ -46,5 +52,9 @@ public class ServiceService {
         System.out.println("ServiceService: Deleting service with ID - " + id);
         serviceRepository.deleteById(id);
         System.out.println("ServiceService: Deleted service with ID - " + id);
+        
+        // Verify the service was deleted by checking total count
+        long totalServices = serviceRepository.count();
+        System.out.println("ServiceService: Total services in database after deletion: " + totalServices);
     }
 }

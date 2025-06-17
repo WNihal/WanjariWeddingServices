@@ -22,10 +22,11 @@ public class ImageService {
     private final String uploadDir = "./uploads/images";
 
     public List<GalleryImage> getAllImages() {
-        List<GalleryImage> images = imageRepository.findAll();
+        List<GalleryImage> images = imageRepository.findAllOrderById();
         System.out.println("ImageService: Found " + images.size() + " images");
-        for (GalleryImage image : images) {
-            System.out.println("Image: ID=" + image.getId() + ", FileName=" + image.getFileName() + 
+        for (int i = 0; i < images.size(); i++) {
+            GalleryImage image = images.get(i);
+            System.out.println("Image " + (i + 1) + ": ID=" + image.getId() + ", FileName=" + image.getFileName() + 
                              ", CategoryID=" + (image.getCategory() != null ? image.getCategory().getId() : "null"));
         }
         return images;
@@ -34,6 +35,10 @@ public class ImageService {
     public List<GalleryImage> getImagesByCategory(Long categoryId) {
         List<GalleryImage> images = imageRepository.findByCategoryId(categoryId);
         System.out.println("ImageService: Found " + images.size() + " images for category " + categoryId);
+        for (int i = 0; i < images.size(); i++) {
+            GalleryImage image = images.get(i);
+            System.out.println("Image " + (i + 1) + " for category " + categoryId + ": ID=" + image.getId() + ", FileName=" + image.getFileName());
+        }
         return images;
     }
 
@@ -66,6 +71,11 @@ public class ImageService {
 
         GalleryImage savedImage = imageRepository.save(image);
         System.out.println("ImageService: Created image with ID - " + savedImage.getId());
+        
+        // Verify the image was saved by checking total count
+        long totalImages = imageRepository.count();
+        System.out.println("ImageService: Total images in database: " + totalImages);
+        
         return savedImage;
     }
 
@@ -107,5 +117,9 @@ public class ImageService {
         // Delete from database
         imageRepository.delete(image);
         System.out.println("ImageService: Deleted image with ID - " + id);
+        
+        // Verify the image was deleted by checking total count
+        long totalImages = imageRepository.count();
+        System.out.println("ImageService: Total images in database after deletion: " + totalImages);
     }
 }

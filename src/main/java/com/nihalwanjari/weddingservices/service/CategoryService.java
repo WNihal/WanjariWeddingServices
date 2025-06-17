@@ -12,10 +12,11 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
 
     public List<Category> getAllCategories() {
-        List<Category> categories = categoryRepository.findAll();
+        List<Category> categories = categoryRepository.findAllOrderById();
         System.out.println("CategoryService: Found " + categories.size() + " categories");
-        for (Category category : categories) {
-            System.out.println("Category: ID=" + category.getId() + ", Name=" + category.getName() + 
+        for (int i = 0; i < categories.size(); i++) {
+            Category category = categories.get(i);
+            System.out.println("Category " + (i + 1) + ": ID=" + category.getId() + ", Name=" + category.getName() + 
                              ", ServiceID=" + (category.getService() != null ? category.getService().getId() : "null"));
         }
         return categories;
@@ -24,6 +25,10 @@ public class CategoryService {
     public List<Category> getCategoriesByService(Long serviceId) {
         List<Category> categories = categoryRepository.findByServiceId(serviceId);
         System.out.println("CategoryService: Found " + categories.size() + " categories for service " + serviceId);
+        for (int i = 0; i < categories.size(); i++) {
+            Category category = categories.get(i);
+            System.out.println("Category " + (i + 1) + " for service " + serviceId + ": ID=" + category.getId() + ", Name=" + category.getName());
+        }
         return categories;
     }
 
@@ -32,6 +37,11 @@ public class CategoryService {
                          " for service " + (category.getService() != null ? category.getService().getId() : "null"));
         Category savedCategory = categoryRepository.save(category);
         System.out.println("CategoryService: Created category with ID - " + savedCategory.getId());
+        
+        // Verify the category was saved by checking total count
+        long totalCategories = categoryRepository.count();
+        System.out.println("CategoryService: Total categories in database: " + totalCategories);
+        
         return savedCategory;
     }
 
@@ -54,5 +64,9 @@ public class CategoryService {
         System.out.println("CategoryService: Deleting category with ID - " + id);
         categoryRepository.deleteById(id);
         System.out.println("CategoryService: Deleted category with ID - " + id);
+        
+        // Verify the category was deleted by checking total count
+        long totalCategories = categoryRepository.count();
+        System.out.println("CategoryService: Total categories in database after deletion: " + totalCategories);
     }
 }

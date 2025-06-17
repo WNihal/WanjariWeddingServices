@@ -1,5 +1,6 @@
 package com.nihalwanjari.weddingservices.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,7 +23,8 @@ public class GalleryImage {
 
     private String caption;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id", nullable = false)
+    @JsonBackReference
     private Category category;
 }
