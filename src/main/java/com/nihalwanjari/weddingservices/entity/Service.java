@@ -31,6 +31,6 @@ public class Service {
     private String icon;
 
     @OneToMany(mappedBy = "service", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JsonManagedReference
+    @JsonManagedReference("service-categories")
     private List<Category> categories = new ArrayList<>();
 }

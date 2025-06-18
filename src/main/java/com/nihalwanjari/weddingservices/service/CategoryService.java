@@ -5,6 +5,9 @@ import com.nihalwanjari.weddingservices.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +25,11 @@ public class CategoryService {
         return categories;
     }
 
+    public List<Map<String, Object>> getAllCategoriesAsMap() {
+        List<Category> categories = getAllCategories();
+        return categories.stream().map(this::convertToMap).collect(Collectors.toList());
+    }
+
     public List<Category> getCategoriesByService(Long serviceId) {
         List<Category> categories = categoryRepository.findByServiceId(serviceId);
         System.out.println("CategoryService: Found " + categories.size() + " categories for service " + serviceId);
@@ -30,6 +38,11 @@ public class CategoryService {
             System.out.println("Category " + (i + 1) + " for service " + serviceId + ": ID=" + category.getId() + ", Name=" + category.getName());
         }
         return categories;
+    }
+
+    public List<Map<String, Object>> getCategoriesByServiceAsMap(Long serviceId) {
+        List<Category> categories = getCategoriesByService(serviceId);
+        return categories.stream().map(this::convertToMap).collect(Collectors.toList());
     }
 
     public Category createCategory(Category category) {
@@ -43,6 +56,11 @@ public class CategoryService {
         System.out.println("CategoryService: Total categories in database: " + totalCategories);
         
         return savedCategory;
+    }
+
+    public Map<String, Object> createCategoryAsMap(Category category) {
+        Category savedCategory = createCategory(category);
+        return convertToMap(savedCategory);
     }
 
     public Category updateCategory(Long id, Category category) {
@@ -60,6 +78,11 @@ public class CategoryService {
         return updatedCategory;
     }
 
+    public Map<String, Object> updateCategoryAsMap(Long id, Category category) {
+        Category updatedCategory = updateCategory(id, category);
+        return convertToMap(updatedCategory);
+    }
+
     public void deleteCategory(Long id) {
         System.out.println("CategoryService: Deleting category with ID - " + id);
         categoryRepository.deleteById(id);
@@ -68,5 +91,23 @@ public class CategoryService {
         // Verify the category was deleted by checking total count
         long totalCategories = categoryRepository.count();
         System.out.println("CategoryService: Total categories in database after deletion: " + totalCategories);
+    }
+
+    private Map<String, Object> convertToMap(Category category) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", category.getId());
+        map.put("name", category.getName());
+        map.put("description", category.getDescription());
+        map.put("thumbnail", category.getThumbnail());
+        
+        // Add service information without causing circular reference
+        if (category.getService() != null) {
+            Map<String, Object> serviceMap = new HashMap<>();
+            serviceMap.put("id", category.getService().getId());
+            serviceMap.put("name", category.getService().getName());
+            map.put("service", serviceMap);
+        }
+        
+        return map;
     }
 }

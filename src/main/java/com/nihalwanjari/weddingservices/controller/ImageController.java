@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/images")
@@ -22,27 +23,28 @@ public class ImageController {
     private final String uploadDir = "./uploads/images";
 
     @GetMapping
-    public ResponseEntity<List<GalleryImage>> getAllImages() {
+    public ResponseEntity<List<Map<String, Object>>> getAllImages() {
         System.out.println("ImageController: GET /api/images called");
-        List<GalleryImage> images = imageService.getAllImages();
+        List<Map<String, Object>> images = imageService.getAllImagesAsMap();
         System.out.println("ImageController: Returning " + images.size() + " images");
         return ResponseEntity.ok(images);
     }
 
     @GetMapping("/category/{categoryId}")
-    public ResponseEntity<List<GalleryImage>> getImagesByCategory(@PathVariable Long categoryId) {
+    public ResponseEntity<List<Map<String, Object>>> getImagesByCategory(@PathVariable Long categoryId) {
         System.out.println("ImageController: GET /api/images/category/" + categoryId + " called");
-        List<GalleryImage> images = imageService.getImagesByCategory(categoryId);
+        List<Map<String, Object>> images = imageService.getImagesByCategoryAsMap(categoryId);
+        System.out.println("ImageController: Returning " + images.size() + " images for category " + categoryId);
         return ResponseEntity.ok(images);
     }
 
     @PostMapping("/{categoryId}")
-    public ResponseEntity<GalleryImage> uploadImage(
+    public ResponseEntity<Map<String, Object>> uploadImage(
             @PathVariable Long categoryId,
             @RequestParam("file") MultipartFile file,
             @RequestParam(required = false) String caption) throws IOException {
         System.out.println("ImageController: POST /api/images/" + categoryId + " called");
-        GalleryImage uploadedImage = imageService.uploadImage(categoryId, file, caption);
+        Map<String, Object> uploadedImage = imageService.uploadImageAsMap(categoryId, file, caption);
         return ResponseEntity.ok(uploadedImage);
     }
 
@@ -61,12 +63,12 @@ public class ImageController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<GalleryImage> updateImage(
+    public ResponseEntity<Map<String, Object>> updateImage(
             @PathVariable Long id,
             @RequestParam(required = false) MultipartFile file,
             @RequestParam(required = false) String caption) throws IOException {
         System.out.println("ImageController: PUT /api/images/" + id + " called");
-        GalleryImage updatedImage = imageService.updateImage(id, file, caption);
+        Map<String, Object> updatedImage = imageService.updateImageAsMap(id, file, caption);
         return ResponseEntity.ok(updatedImage);
     }
 

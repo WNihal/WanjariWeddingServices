@@ -50,13 +50,11 @@ export const DataProvider = ({ children }: DataProviderProps) => {
         console.log('📥 Raw services data from backend:', data);
         console.log('📊 Number of services received:', data.length);
         
-        // Ensure data is an array
         if (!Array.isArray(data)) {
           console.error('❌ Services data is not an array:', typeof data);
           return [];
         }
         
-        // Transform backend data to frontend format
         const transformedServices = data.map((service: any, index: number) => {
           console.log(`🔄 Transforming service ${index + 1}:`, service);
           return {
@@ -94,13 +92,11 @@ export const DataProvider = ({ children }: DataProviderProps) => {
         console.log('📥 Raw categories data from backend:', data);
         console.log('📊 Number of categories received:', data.length);
         
-        // Ensure data is an array
         if (!Array.isArray(data)) {
           console.error('❌ Categories data is not an array:', typeof data);
           return [];
         }
         
-        // Transform backend data to frontend format
         const transformedCategories = data.map((category: any, index: number) => {
           console.log(`🔄 Transforming category ${index + 1}:`, category);
           return {
@@ -138,19 +134,17 @@ export const DataProvider = ({ children }: DataProviderProps) => {
         console.log('📥 Raw images data from backend:', data);
         console.log('📊 Number of images received:', data.length);
         
-        // Ensure data is an array
         if (!Array.isArray(data)) {
           console.error('❌ Images data is not an array:', typeof data);
           return [];
         }
         
-        // Transform backend data to frontend format
         const transformedImages = data.map((image: any, index: number) => {
           console.log(`🔄 Transforming image ${index + 1}:`, image);
           return {
             id: image.id.toString(),
             categoryId: image.category?.id?.toString() || '',
-            url: `http://localhost:8080/api/images/${image.fileName}`,
+            url: image.url || `http://localhost:8080/api/images/${image.fileName}`,
             caption: image.caption || ''
           };
         });
@@ -207,12 +201,9 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       if (response.ok) {
         const newService = await response.json();
         console.log('✅ Service added successfully:', newService);
-        // Immediately refresh services to show the new one
         await fetchServices();
       } else {
         console.error('❌ Failed to add service:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
         throw new Error('Failed to add service');
       }
     } catch (error) {
@@ -236,12 +227,9 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       if (response.ok) {
         const updatedService = await response.json();
         console.log('✅ Service updated successfully:', updatedService);
-        // Immediately refresh services to show the updated one
         await fetchServices();
       } else {
         console.error('❌ Failed to update service:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
         throw new Error('Failed to update service');
       }
     } catch (error) {
@@ -262,12 +250,9 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
       if (response.ok) {
         console.log('✅ Service deleted successfully');
-        // Refresh all data since categories and images might be affected
         await refreshData();
       } else {
         console.error('❌ Failed to delete service:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
         throw new Error('Failed to delete service');
       }
     } catch (error) {
@@ -299,12 +284,9 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       if (response.ok) {
         const newCategory = await response.json();
         console.log('✅ Category added successfully:', newCategory);
-        // Immediately refresh categories to show the new one
         await fetchCategories();
       } else {
         console.error('❌ Failed to add category:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
         throw new Error('Failed to add category');
       }
     } catch (error) {
@@ -335,12 +317,9 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       if (response.ok) {
         const updatedCategory = await response.json();
         console.log('✅ Category updated successfully:', updatedCategory);
-        // Immediately refresh categories to show the updated one
         await fetchCategories();
       } else {
         console.error('❌ Failed to update category:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
         throw new Error('Failed to update category');
       }
     } catch (error) {
@@ -361,13 +340,10 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
       if (response.ok) {
         console.log('✅ Category deleted successfully');
-        // Refresh categories and images as they might be affected
         await fetchCategories();
         await fetchImages();
       } else {
         console.error('❌ Failed to delete category:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
         throw new Error('Failed to delete category');
       }
     } catch (error) {
@@ -391,12 +367,9 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       if (response.ok) {
         const newImage = await response.json();
         console.log('✅ Image added successfully:', newImage);
-        // Immediately refresh images to show the new one
         await fetchImages();
       } else {
         console.error('❌ Failed to add image:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
         throw new Error('Failed to add image');
       }
     } catch (error) {
@@ -419,12 +392,9 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       if (response.ok) {
         const updatedImage = await response.json();
         console.log('✅ Image updated successfully:', updatedImage);
-        // Immediately refresh images to show the updated one
         await fetchImages();
       } else {
         console.error('❌ Failed to update image:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
         throw new Error('Failed to update image');
       }
     } catch (error) {
@@ -445,12 +415,9 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
       if (response.ok) {
         console.log('✅ Image deleted successfully');
-        // Immediately refresh images to show the deletion
         await fetchImages();
       } else {
         console.error('❌ Failed to delete image:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
         throw new Error('Failed to delete image');
       }
     } catch (error) {
@@ -459,7 +426,7 @@ export const DataProvider = ({ children }: DataProviderProps) => {
     }
   };
 
-  // Utility functions - memoized to prevent unnecessary re-renders
+  // Utility functions
   const getServiceById = useCallback((id: string) => {
     const service = services.find((service) => service.id === id);
     console.log(`🔍 Getting service by ID ${id}:`, service);

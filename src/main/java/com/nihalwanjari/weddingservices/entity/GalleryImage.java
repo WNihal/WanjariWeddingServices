@@ -23,8 +23,8 @@ public class GalleryImage {
 
     private String caption;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
-    @JsonBackReference
+    @JsonBackReference("category-images")
     private Category category;
 }

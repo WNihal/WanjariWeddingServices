@@ -12,7 +12,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +35,11 @@ public class ImageService {
         return images;
     }
 
+    public List<Map<String, Object>> getAllImagesAsMap() {
+        List<GalleryImage> images = getAllImages();
+        return images.stream().map(this::convertToMap).collect(Collectors.toList());
+    }
+
     public List<GalleryImage> getImagesByCategory(Long categoryId) {
         List<GalleryImage> images = imageRepository.findByCategoryId(categoryId);
         System.out.println("ImageService: Found " + images.size() + " images for category " + categoryId);
@@ -40,6 +48,11 @@ public class ImageService {
             System.out.println("Image " + (i + 1) + " for category " + categoryId + ": ID=" + image.getId() + ", FileName=" + image.getFileName());
         }
         return images;
+    }
+
+    public List<Map<String, Object>> getImagesByCategoryAsMap(Long categoryId) {
+        List<GalleryImage> images = getImagesByCategory(categoryId);
+        return images.stream().map(this::convertToMap).collect(Collectors.toList());
     }
 
     public GalleryImage uploadImage(Long categoryId, MultipartFile file, String caption) throws IOException {
@@ -66,7 +79,7 @@ public class ImageService {
         GalleryImage image = GalleryImage.builder()
                 .fileName(fileName)
                 .caption(caption)
-                .category(category)  // Set the category object, not the ID
+                .category(category)
                 .build();
 
         GalleryImage savedImage = imageRepository.save(image);
@@ -77,6 +90,11 @@ public class ImageService {
         System.out.println("ImageService: Total images in database: " + totalImages);
         
         return savedImage;
+    }
+
+    public Map<String, Object> uploadImageAsMap(Long categoryId, MultipartFile file, String caption) throws IOException {
+        GalleryImage savedImage = uploadImage(categoryId, file, caption);
+        return convertToMap(savedImage);
     }
 
     public GalleryImage updateImage(Long id, MultipartFile file, String caption) throws IOException {
@@ -105,6 +123,11 @@ public class ImageService {
         return updatedImage;
     }
 
+    public Map<String, Object> updateImageAsMap(Long id, MultipartFile file, String caption) throws IOException {
+        GalleryImage updatedImage = updateImage(id, file, caption);
+        return convertToMap(updatedImage);
+    }
+
     public void deleteImage(Long id) throws IOException {
         System.out.println("ImageService: Deleting image with ID - " + id);
         GalleryImage image = imageRepository.findById(id)
@@ -121,5 +144,23 @@ public class ImageService {
         // Verify the image was deleted by checking total count
         long totalImages = imageRepository.count();
         System.out.println("ImageService: Total images in database after deletion: " + totalImages);
+    }
+
+    private Map<String, Object> convertToMap(GalleryImage image) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", image.getId());
+        map.put("fileName", image.getFileName());
+        map.put("caption", image.getCaption());
+        map.put("url", "http://localhost:8080/api/images/" + image.getFileName());
+        
+        // Add category information without causing circular reference
+        if (image.getCategory() != null) {
+            Map<String, Object> categoryMap = new HashMap<>();
+            categoryMap.put("id", image.getCategory().getId());
+            categoryMap.put("name", image.getCategory().getName());
+            map.put("category", categoryMap);
+        }
+        
+        return map;
     }
 }

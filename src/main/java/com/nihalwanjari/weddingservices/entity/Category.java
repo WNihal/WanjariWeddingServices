@@ -30,12 +30,12 @@ public class Category {
 
     private String thumbnail;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_id", nullable = false)
-    @JsonBackReference
+    @JsonBackReference("service-categories")
     private Service service;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JsonManagedReference
+    @JsonManagedReference("category-images")
     private List<GalleryImage> images = new ArrayList<>();
 }
