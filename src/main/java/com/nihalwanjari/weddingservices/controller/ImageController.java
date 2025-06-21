@@ -1,6 +1,5 @@
 package com.nihalwanjari.weddingservices.controller;
 
-import com.nihalwanjari.weddingservices.entity.GalleryImage;
 import com.nihalwanjari.weddingservices.service.ImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
@@ -16,13 +15,15 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/images")
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class ImageController {
     private final ImageService imageService;
-    private final String uploadDir = "./uploads/images";
+    private final String serviceUploadDir = "./uploads/services";
+    private final String categoryUploadDir = "./uploads/categories";
+    private final String imageUploadDir = "./uploads/images";
 
-    @GetMapping
+    @GetMapping("/images")
     public ResponseEntity<List<Map<String, Object>>> getAllImages() {
         System.out.println("ImageController: GET /api/images called");
         List<Map<String, Object>> images = imageService.getAllImagesAsMap();
@@ -30,7 +31,7 @@ public class ImageController {
         return ResponseEntity.ok(images);
     }
 
-    @GetMapping("/category/{categoryId}")
+    @GetMapping("/images/category/{categoryId}")
     public ResponseEntity<List<Map<String, Object>>> getImagesByCategory(@PathVariable Long categoryId) {
         System.out.println("ImageController: GET /api/images/category/" + categoryId + " called");
         List<Map<String, Object>> images = imageService.getImagesByCategoryAsMap(categoryId);
@@ -38,7 +39,7 @@ public class ImageController {
         return ResponseEntity.ok(images);
     }
 
-    @PostMapping("/{categoryId}")
+    @PostMapping("/images/{categoryId}")
     public ResponseEntity<Map<String, Object>> uploadImage(
             @PathVariable Long categoryId,
             @RequestParam("file") MultipartFile file,
@@ -48,9 +49,9 @@ public class ImageController {
         return ResponseEntity.ok(uploadedImage);
     }
 
-    @GetMapping("/{fileName}")
+    @GetMapping("/images/{fileName}")
     public ResponseEntity<Resource> serveImage(@PathVariable String fileName) throws IOException {
-        Path filePath = Paths.get(uploadDir).resolve(fileName);
+        Path filePath = Paths.get(imageUploadDir).resolve(fileName);
         Resource resource = new UrlResource(filePath.toUri());
 
         if (resource.exists() && resource.isReadable()) {
@@ -62,7 +63,35 @@ public class ImageController {
         return ResponseEntity.notFound().build();
     }
 
-    @PutMapping("/{id}")
+    @GetMapping("/services/images/{fileName}")
+    public ResponseEntity<Resource> serveServiceImage(@PathVariable String fileName) throws IOException {
+        Path filePath = Paths.get(serviceUploadDir).resolve(fileName);
+        Resource resource = new UrlResource(filePath.toUri());
+
+        if (resource.exists() && resource.isReadable()) {
+            return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_JPEG)
+                    .body(resource);
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/categories/images/{fileName}")
+    public ResponseEntity<Resource> serveCategoryImage(@PathVariable String fileName) throws IOException {
+        Path filePath = Paths.get(categoryUploadDir).resolve(fileName);
+        Resource resource = new UrlResource(filePath.toUri());
+
+        if (resource.exists() && resource.isReadable()) {
+            return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_JPEG)
+                    .body(resource);
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
+    @PutMapping("/images/{id}")
     public ResponseEntity<Map<String, Object>> updateImage(
             @PathVariable Long id,
             @RequestParam(required = false) MultipartFile file,
@@ -72,7 +101,7 @@ public class ImageController {
         return ResponseEntity.ok(updatedImage);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/images/{id}")
     public ResponseEntity<?> deleteImage(@PathVariable Long id) throws IOException {
         System.out.println("ImageController: DELETE /api/images/" + id + " called");
         imageService.deleteImage(id);

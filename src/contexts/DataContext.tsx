@@ -5,11 +5,11 @@ interface DataContextType {
   services: Service[];
   categories: Category[];
   images: GalleryImage[];
-  addService: (service: Omit<Service, 'id'>) => Promise<void>;
-  updateService: (id: string, service: Partial<Service>) => Promise<void>;
+  addService: (service: FormData) => Promise<void>;
+  updateService: (id: string, service: FormData) => Promise<void>;
   deleteService: (id: string) => Promise<void>;
-  addCategory: (category: Omit<Category, 'id'>) => Promise<void>;
-  updateCategory: (id: string, category: Partial<Category>) => Promise<void>;
+  addCategory: (category: FormData) => Promise<void>;
+  updateCategory: (id: string, category: FormData) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
   addImage: (image: FormData) => Promise<void>;
   updateImage: (id: string, image: FormData) => Promise<void>;
@@ -186,16 +186,15 @@ export const DataProvider = ({ children }: DataProviderProps) => {
   }, [refreshData]);
 
   // Service operations
-  const addService = async (service: Omit<Service, 'id'>) => {
+  const addService = async (formData: FormData) => {
     try {
-      console.log('➕ Adding service:', service);
+      console.log('➕ Adding service with FormData');
       const response = await fetch('http://localhost:8080/api/services', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(service),
+        body: formData,
       });
 
       if (response.ok) {
@@ -212,16 +211,15 @@ export const DataProvider = ({ children }: DataProviderProps) => {
     }
   };
 
-  const updateService = async (id: string, service: Partial<Service>) => {
+  const updateService = async (id: string, formData: FormData) => {
     try {
-      console.log('✏️ Updating service:', id, service);
+      console.log('✏️ Updating service:', id);
       const response = await fetch(`http://localhost:8080/api/services/${id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(service),
+        body: formData,
       });
 
       if (response.ok) {
@@ -262,23 +260,15 @@ export const DataProvider = ({ children }: DataProviderProps) => {
   };
 
   // Category operations
-  const addCategory = async (category: Omit<Category, 'id'>) => {
+  const addCategory = async (formData: FormData) => {
     try {
-      console.log('➕ Adding category:', category);
-      const categoryData = {
-        name: category.name,
-        description: category.description,
-        thumbnail: category.thumbnail,
-        service: { id: parseInt(category.serviceId) }
-      };
-
+      console.log('➕ Adding category with FormData');
       const response = await fetch('http://localhost:8080/api/categories', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(categoryData),
+        body: formData,
       });
 
       if (response.ok) {
@@ -295,23 +285,15 @@ export const DataProvider = ({ children }: DataProviderProps) => {
     }
   };
 
-  const updateCategory = async (id: string, category: Partial<Category>) => {
+  const updateCategory = async (id: string, formData: FormData) => {
     try {
-      console.log('✏️ Updating category:', id, category);
-      const categoryData = {
-        name: category.name,
-        description: category.description,
-        thumbnail: category.thumbnail,
-        service: category.serviceId ? { id: parseInt(category.serviceId) } : undefined
-      };
-
+      console.log('✏️ Updating category:', id);
       const response = await fetch(`http://localhost:8080/api/categories/${id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(categoryData),
+        body: formData,
       });
 
       if (response.ok) {

@@ -53,10 +53,10 @@ const CategoriesManagePage: React.FC = () => {
     );
   }
 
-  const handleAddCategory = async (categoryData: Omit<Category, 'id'>) => {
+  const handleAddCategory = async (formData: FormData) => {
     setIsLoading(true);
     try {
-      await addCategory(categoryData);
+      await addCategory(formData);
       setIsAddModalOpen(false);
     } catch (error) {
       console.error('Failed to add category:', error);
@@ -66,11 +66,11 @@ const CategoriesManagePage: React.FC = () => {
     }
   };
 
-  const handleUpdateCategory = async (categoryData: Partial<Category>) => {
+  const handleUpdateCategory = async (formData: FormData) => {
     if (editingCategory) {
       setIsLoading(true);
       try {
-        await updateCategory(editingCategory.id, categoryData);
+        await updateCategory(editingCategory.id, formData);
         setEditingCategory(null);
       } catch (error) {
         console.error('Failed to update category:', error);

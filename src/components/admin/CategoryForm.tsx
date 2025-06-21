@@ -4,16 +4,16 @@ import { Category } from '../../types';
 interface CategoryFormProps {
   serviceId: string;
   initialData?: Category;
-  onSubmit: (data: Omit<Category, 'id'> | Partial<Category>) => void;
+  onSubmit: (data: FormData) => void;
   onCancel: () => void;
 }
 
 const CategoryForm: React.FC<CategoryFormProps> = ({ serviceId, initialData, onSubmit, onCancel }) => {
-  const [formData, setFormData] = useState<Omit<Category, 'id'> | Partial<Category>>({
-    serviceId: serviceId,
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState(initialData?.thumbnail || '');
+  const [formData, setFormData] = useState({
     name: initialData?.name || '',
     description: initialData?.description || '',
-    thumbnail: initialData?.thumbnail || '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -24,9 +24,26 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ serviceId, initialData, onS
     });
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    const submitData = new FormData();
+    if (selectedFile) {
+      submitData.append('file', selectedFile);
+    }
+    submitData.append('name', formData.name);
+    submitData.append('description', formData.description);
+    submitData.append('serviceId', serviceId);
+    
+    onSubmit(submitData);
   };
 
   return (
@@ -60,22 +77,25 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ serviceId, initialData, onS
       </div>
 
       <div>
-        <label htmlFor="thumbnail" className="block text-sm font-medium text-gray-700">Thumbnail URL</label>
+        <label htmlFor="file" className="block text-sm font-medium text-gray-700">Thumbnail Image</label>
         <input
-          type="url"
-          id="thumbnail"
-          name="thumbnail"
-          value={formData.thumbnail}
-          onChange={handleChange}
-          required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-burgundy focus:ring-burgundy sm:text-sm"
-          placeholder="https://example.com/image.jpg"
+          type="file"
+          id="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          required={!initialData}
+          className="mt-1 block w-full text-sm text-gray-500
+            file:mr-4 file:py-2 file:px-4
+            file:rounded-md file:border-0
+            file:text-sm file:font-medium
+            file:bg-burgundy file:text-white
+            hover:file:bg-burgundy/90"
         />
-        {formData.thumbnail && (
+        {previewUrl && (
           <div className="mt-2">
             <p className="text-sm text-gray-500 mb-1">Preview:</p>
             <img 
-              src={formData.thumbnail} 
+              src={previewUrl} 
               alt="Thumbnail Preview" 
               className="h-20 w-32 object-cover rounded border border-gray-300" 
             />

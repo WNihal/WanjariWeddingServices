@@ -5,7 +5,9 @@ import com.nihalwanjari.weddingservices.service.ServiceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -23,16 +25,25 @@ public class ServiceController {
     }
 
     @PostMapping
-    public ResponseEntity<Service> createService(@RequestBody Service service) {
-        System.out.println("ServiceController: POST /api/services called with: " + service.getName());
-        Service createdService = serviceService.createService(service);
+    public ResponseEntity<Service> createService(
+            @RequestParam("name") String name,
+            @RequestParam("description") String description,
+            @RequestParam("icon") String icon,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        System.out.println("ServiceController: POST /api/services called with: " + name);
+        Service createdService = serviceService.createService(name, description, icon, file);
         return ResponseEntity.ok(createdService);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Service> updateService(@PathVariable Long id, @RequestBody Service service) {
+    public ResponseEntity<Service> updateService(
+            @PathVariable Long id,
+            @RequestParam("name") String name,
+            @RequestParam("description") String description,
+            @RequestParam("icon") String icon,
+            @RequestParam(required = false) MultipartFile file) throws IOException {
         System.out.println("ServiceController: PUT /api/services/" + id + " called");
-        Service updatedService = serviceService.updateService(id, service);
+        Service updatedService = serviceService.updateService(id, name, description, icon, file);
         return ResponseEntity.ok(updatedService);
     }
 

@@ -1,18 +1,28 @@
 package com.nihalwanjari.weddingservices.service;
 
 import com.nihalwanjari.weddingservices.entity.Category;
+import com.nihalwanjari.weddingservices.entity.Service;
 import com.nihalwanjari.weddingservices.repository.CategoryRepository;
+import com.nihalwanjari.weddingservices.repository.ServiceRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-@Service
+@org.springframework.stereotype.Service
 @RequiredArgsConstructor
 public class CategoryService {
     private final CategoryRepository categoryRepository;
+    private final ServiceRepository serviceRepository;
+    private final String uploadDir = "./uploads/categories";
 
     public List<Category> getAllCategories() {
         List<Category> categories = categoryRepository.findAllOrderById();
@@ -45,9 +55,34 @@ public class CategoryService {
         return categories.stream().map(this::convertToMap).collect(Collectors.toList());
     }
 
-    public Category createCategory(Category category) {
-        System.out.println("CategoryService: Creating category - " + category.getName() + 
-                         " for service " + (category.getService() != null ? category.getService().getId() : "null"));
+    public Category createCategory(String name, String description, Long serviceId, MultipartFile file) throws IOException {
+        System.out.println("CategoryService: Creating category - " + name + " for service " + serviceId);
+        
+        // Find the service
+        Service service = serviceRepository.findById(serviceId)
+                .orElseThrow(() -> new RuntimeException("Service not found with id: " + serviceId));
+
+        // Create upload directory if it doesn't exist
+        Path uploadPath = Paths.get(uploadDir);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        // Generate unique filename
+        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        Path filePath = uploadPath.resolve(fileName);
+
+        // Save file to disk
+        Files.copy(file.getInputStream(), filePath);
+
+        // Create category with file URL
+        Category category = Category.builder()
+                .name(name)
+                .description(description)
+                .thumbnail("http://localhost:8080/api/categories/images/" + fileName)
+                .service(service)
+                .build();
+
         Category savedCategory = categoryRepository.save(category);
         System.out.println("CategoryService: Created category with ID - " + savedCategory.getId());
         
@@ -58,33 +93,70 @@ public class CategoryService {
         return savedCategory;
     }
 
-    public Map<String, Object> createCategoryAsMap(Category category) {
-        Category savedCategory = createCategory(category);
+    public Map<String, Object> createCategoryAsMap(String name, String description, Long serviceId, MultipartFile file) throws IOException {
+        Category savedCategory = createCategory(name, description, serviceId, file);
         return convertToMap(savedCategory);
     }
 
-    public Category updateCategory(Long id, Category category) {
+    public Category updateCategory(Long id, String name, String description, Long serviceId, MultipartFile file) throws IOException {
         System.out.println("CategoryService: Updating category with ID - " + id);
         Category existingCategory = categoryRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Category not found"));
         
-        existingCategory.setName(category.getName());
-        existingCategory.setDescription(category.getDescription());
-        existingCategory.setThumbnail(category.getThumbnail());
-        existingCategory.setService(category.getService());
+        Service service = serviceRepository.findById(serviceId)
+                .orElseThrow(() -> new RuntimeException("Service not found with id: " + serviceId));
+        
+        existingCategory.setName(name);
+        existingCategory.setDescription(description);
+        existingCategory.setService(service);
+
+        if (file != null && !file.isEmpty()) {
+            // Delete old file if it exists
+            if (existingCategory.getThumbnail() != null) {
+                String oldFileName = existingCategory.getThumbnail().substring(existingCategory.getThumbnail().lastIndexOf("/") + 1);
+                Path oldFilePath = Paths.get(uploadDir).resolve(oldFileName);
+                Files.deleteIfExists(oldFilePath);
+            }
+
+            // Create upload directory if it doesn't exist
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            // Save new file
+            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(file.getInputStream(), filePath);
+            existingCategory.setThumbnail("http://localhost:8080/api/categories/images/" + fileName);
+        }
         
         Category updatedCategory = categoryRepository.save(existingCategory);
         System.out.println("CategoryService: Updated category with ID - " + updatedCategory.getId());
         return updatedCategory;
     }
 
-    public Map<String, Object> updateCategoryAsMap(Long id, Category category) {
-        Category updatedCategory = updateCategory(id, category);
+    public Map<String, Object> updateCategoryAsMap(Long id, String name, String description, Long serviceId, MultipartFile file) throws IOException {
+        Category updatedCategory = updateCategory(id, name, description, serviceId, file);
         return convertToMap(updatedCategory);
     }
 
     public void deleteCategory(Long id) {
         System.out.println("CategoryService: Deleting category with ID - " + id);
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+
+        // Delete thumbnail file if it exists
+        if (category.getThumbnail() != null) {
+            try {
+                String fileName = category.getThumbnail().substring(category.getThumbnail().lastIndexOf("/") + 1);
+                Path filePath = Paths.get(uploadDir).resolve(fileName);
+                Files.deleteIfExists(filePath);
+            } catch (IOException e) {
+                System.err.println("Failed to delete category thumbnail file: " + e.getMessage());
+            }
+        }
+
         categoryRepository.deleteById(id);
         System.out.println("CategoryService: Deleted category with ID - " + id);
         

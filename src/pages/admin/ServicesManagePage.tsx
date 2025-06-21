@@ -15,10 +15,10 @@ const ServicesManagePage: React.FC = () => {
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleAddService = async (serviceData: Omit<Service, 'id'>) => {
+  const handleAddService = async (formData: FormData) => {
     setIsLoading(true);
     try {
-      await addService(serviceData);
+      await addService(formData);
       setIsAddModalOpen(false);
     } catch (error) {
       console.error('Failed to add service:', error);
@@ -28,11 +28,11 @@ const ServicesManagePage: React.FC = () => {
     }
   };
 
-  const handleUpdateService = async (serviceData: Partial<Service>) => {
+  const handleUpdateService = async (formData: FormData) => {
     if (editingService) {
       setIsLoading(true);
       try {
-        await updateService(editingService.id, serviceData);
+        await updateService(editingService.id, formData);
         setEditingService(null);
       } catch (error) {
         console.error('Failed to update service:', error);

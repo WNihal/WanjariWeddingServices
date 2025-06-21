@@ -1,14 +1,14 @@
 package com.nihalwanjari.weddingservices.controller;
 
-import com.nihalwanjari.weddingservices.entity.Category;
 import com.nihalwanjari.weddingservices.service.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/categories")
@@ -33,16 +33,25 @@ public class CategoryController {
     }
 
     @PostMapping
-    public ResponseEntity<Map<String, Object>> createCategory(@RequestBody Category category) {
-        System.out.println("CategoryController: POST /api/categories called with: " + category.getName());
-        Map<String, Object> createdCategory = categoryService.createCategoryAsMap(category);
+    public ResponseEntity<Map<String, Object>> createCategory(
+            @RequestParam("name") String name,
+            @RequestParam("description") String description,
+            @RequestParam("serviceId") Long serviceId,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        System.out.println("CategoryController: POST /api/categories called with: " + name);
+        Map<String, Object> createdCategory = categoryService.createCategoryAsMap(name, description, serviceId, file);
         return ResponseEntity.ok(createdCategory);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> updateCategory(@PathVariable Long id, @RequestBody Category category) {
+    public ResponseEntity<Map<String, Object>> updateCategory(
+            @PathVariable Long id,
+            @RequestParam("name") String name,
+            @RequestParam("description") String description,
+            @RequestParam("serviceId") Long serviceId,
+            @RequestParam(required = false) MultipartFile file) throws IOException {
         System.out.println("CategoryController: PUT /api/categories/" + id + " called");
-        Map<String, Object> updatedCategory = categoryService.updateCategoryAsMap(id, category);
+        Map<String, Object> updatedCategory = categoryService.updateCategoryAsMap(id, name, description, serviceId, file);
         return ResponseEntity.ok(updatedCategory);
     }
 
